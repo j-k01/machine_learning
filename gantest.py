@@ -230,3 +230,38 @@ if __name__ == '__main__':
     timer.elapsed_time()
     mnist_dcgan.plot_images(fake=True)
     mnist_dcgan.plot_images(fake=False, save2file=True)
+
+    
+test = cv2.imread('Untitled164.jpeg', cv2.IMREAD_GRAYSCALE)
+ret,test = cv2.threshold(test,127,255,cv2.THRESH_BINARY_INV)
+test = test/255.0
+test = np.reshape(test, (1,64*64))
+t = np.random.uniform(-1.0, 1.0, size=[1, 100])
+#z = [[0 1]]
+
+def mean_squared_error_tryme(y_true, y_pred):
+    return K.mean(K.square((y_pred*y_true) - y_true), axis=-1)
+
+tryme = Sequential()
+tryme.add(Dense(512, input_shape=(100,), activation='relu'))
+tryme.add(Dense(512))
+tryme.add(Dense(100))
+for layer in generator.layers:
+    layer.trainable = False
+tryme.add(generator)
+tryme.layers.pop()
+tryme.add(Activation('relu'))
+tryme.add(Flatten())
+
+tryme.compile(loss=mean_squared_error_tryme,
+              optimizer='sgd',
+              metrics=['accuracy'])
+
+tryme.summary()
+
+history = tryme.fit(t, test_img, verbose=1, epochs=50)
+
+c = tryme.predict(t)
+image = c[0]
+image = np.reshape(image, [32, 32])
+plt.imshow(image, cmap='gray')
